@@ -3,7 +3,6 @@ package org.jbestie.game;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
-import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -78,7 +77,8 @@ public class Match3 extends ApplicationAdapter {
                 for (Sprite object : field) {
                     int ox = Math.round(object.getX());
                     int oy = Math.round(object.getY());
-                    if (x >= ox && x <= ox && y >= oy && y <= oy) {
+                    if ((x > ox && x <= (ox + object.getWidth()))
+                        && (y > oy && y <= (oy + object.getHeight()))) {
                         logger.info("I'm hit!!!!");
                         field.remove(object);
                         break;
