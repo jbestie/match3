@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Logger;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -33,6 +34,7 @@ public class Match3 extends ApplicationAdapter {
 	private Sprite background;
     private List<Texture> textures;
     private List<Sprite> field;
+    private List<Sprite> selectedElements = new ArrayList<Sprite>();
 
     private Viewport viewport;
     private Camera camera;
@@ -68,6 +70,10 @@ public class Match3 extends ApplicationAdapter {
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+                if (selectedElements.size() == 2) {
+                    return  true;
+                }
+
                 Vector3 tempVec =  new Vector3();
                 camera.unproject(tempVec.set(screenX, screenY, 0));
 
@@ -80,7 +86,12 @@ public class Match3 extends ApplicationAdapter {
                     if ((x > ox && x <= (ox + object.getWidth()))
                         && (y > oy && y <= (oy + object.getHeight()))) {
                         logger.info("I'm hit!!!!");
-                        field.remove(object);
+//                        field.remove(object);
+                        if (!selectedElements.contains(object)) {
+                            selectedElements.add(object);
+                        } else {
+                            selectedElements.remove(object);
+                        }
                         break;
                     }
 
@@ -119,6 +130,15 @@ public class Match3 extends ApplicationAdapter {
 		batch.begin();
 		//place draw logic here
         background.draw(batch);
+
+        if (selectedElements.size() == 2) {
+            Sprite firstElement = selectedElements.get(0);
+            Sprite secondElement = selectedElements.get(1);
+            Vector2 position = new Vector2(firstElement.getX(), firstElement.getY());
+            firstElement.setPosition(secondElement.getX(), secondElement.getY());
+            secondElement.setPosition(position.x, position.y);
+            selectedElements.clear();
+        }
 
         drawField(field, batch);
 
