@@ -14,43 +14,33 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Logger;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import org.jbestie.game.enums.ItemType;
+import org.jbestie.game.object.GameObject;
+import org.jbestie.game.object.GridPosition;
+import org.jbestie.game.utils.GameConstants;
+import org.jbestie.game.utils.MatchUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class Match3 extends ApplicationAdapter {
-    private static final int HORIZONTAL_CELLS_COUNT = 3;
-    private static final int VERTICAL_CELLS_COUNT = 3;
-    private static final float ITEM_WIDTH = 100.0f;
-    private static final float ITEM_HEIGHT = 100.0f;
-    private static final float WINDOW_WIDTH = 640.0f;
-    private static final float WINDOW_HEIGHT = 480.0f;
-    private static final float CELL_SPACING_COEFFICIENT = 0.2f;
-    private static final int WORLD_WIDTH = 640;
-    private static final int WORLD_HEIGHT = 480;
     private SpriteBatch batch;
 	private Sprite background;
     private List<Texture> textures;
-    private List<Sprite> field;
-    private List<Sprite> selectedElements = new ArrayList<Sprite>();
+    private GameObject[][] gameMap;
+    private List<GameObject> selectedElements = new ArrayList<GameObject>();
 
     private Viewport viewport;
     private Camera camera;
-    private Logger logger;
-
-
-
+    private Random random = new Random();
 
 	@Override
 	public void create () {
 
         camera = new OrthographicCamera(Gdx.graphics.getWidth(),
                 Gdx.graphics.getHeight());
-        camera.position.set(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, 0);
+        camera.position.set(GameConstants.WORLD_WIDTH / 2, GameConstants.WORLD_HEIGHT / 2, 0);
         camera.update();
-        viewport = new FitViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
+        viewport = new FitViewport(GameConstants.WORLD_WIDTH, GameConstants.WORLD_HEIGHT, camera);
 
 		batch = new SpriteBatch();
         background  = new Sprite( new Texture(Gdx.files.internal("background/bg.png")));
@@ -64,8 +54,7 @@ public class Match3 extends ApplicationAdapter {
         Texture yellowJelly = new Texture(Gdx.files.internal("sprites/jelly_yellow.png"));
         textures = Arrays.asList(blueJelly, greenJelly, greyJelly, purpleJelly, redJelly, yellowJelly);
 
-        field = generateField();
-        logger = new Logger(getClass().getSimpleName());
+        gameMap = generateField();
 
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
@@ -80,19 +69,20 @@ public class Match3 extends ApplicationAdapter {
                 int x = (int) tempVec.x;
                 int y = (int) tempVec.y;
 
-                for (Sprite object : field) {
-                    int ox = Math.round(object.getX());
-                    int oy = Math.round(object.getY());
-                    if ((x > ox && x <= (ox + object.getWidth()))
-                        && (y > oy && y <= (oy + object.getHeight()))) {
-                        logger.info("I'm hit!!!!");
-//                        field.remove(object);
-                        if (!selectedElements.contains(object)) {
-                            selectedElements.add(object);
-                        } else {
-                            selectedElements.remove(object);
+                for (int i = 0; i < GameConstants.VERTICAL_CELLS_COUNT ; i++) {
+                    for (int j = 0; j < GameConstants.HORIZONTAL_CELLS_COUNT; j++) {
+                        GameObject object = gameMap[i][j];
+                        int ox = Math.round(object.getX());
+                        int oy = Math.round(object.getY());
+                        if ((x > ox && x <= (ox + object.getWidth()))
+                                && (y > oy && y <= (oy + object.getHeight()))) {
+                            if (!selectedElements.contains(object)) {
+                                selectedElements.add(object);
+                            } else {
+                                selectedElements.remove(object);
+                            }
+                            break;
                         }
-                        break;
                     }
 
                 }
@@ -102,20 +92,21 @@ public class Match3 extends ApplicationAdapter {
     }
 
 
-	private List<Sprite> generateField() {
-	    List<Sprite> result = new ArrayList<Sprite>();
+	private GameObject[][] generateField() {
+        GameObject[][] result = new GameObject[GameConstants.VERTICAL_CELLS_COUNT][GameConstants.HORIZONTAL_CELLS_COUNT];
 
-	    float startXPosition = (WINDOW_WIDTH - ITEM_WIDTH * HORIZONTAL_CELLS_COUNT - (HORIZONTAL_CELLS_COUNT - 1) * CELL_SPACING_COEFFICIENT)/ 2;
-	    float startYPosition = ITEM_HEIGHT * VERTICAL_CELLS_COUNT + (VERTICAL_CELLS_COUNT - 1) * CELL_SPACING_COEFFICIENT ;
+	    float startXPosition = (GameConstants.WINDOW_WIDTH - GameConstants.ITEM_WIDTH * GameConstants.HORIZONTAL_CELLS_COUNT - (GameConstants.HORIZONTAL_CELLS_COUNT - 1) * GameConstants.CELL_SPACING_COEFFICIENT)/ 2;
+	    float startYPosition = GameConstants.ITEM_HEIGHT * GameConstants.VERTICAL_CELLS_COUNT + (GameConstants.VERTICAL_CELLS_COUNT - 1) * GameConstants.CELL_SPACING_COEFFICIENT ;
 
-        Random rand = new Random();
-        for (int i = 0; i < VERTICAL_CELLS_COUNT ; i++) {
-            for (int j = 0; j < HORIZONTAL_CELLS_COUNT; j++) {
+        for (int i = 0; i < GameConstants.VERTICAL_CELLS_COUNT ; i++) {
+            for (int j = 0; j < GameConstants.HORIZONTAL_CELLS_COUNT; j++) {
 
-                Sprite sprite = new Sprite(textures.get(rand.nextInt(textures.size() - 1)));
-                sprite.setPosition(startXPosition + i * ITEM_WIDTH + CELL_SPACING_COEFFICIENT * i, startYPosition - j * ITEM_HEIGHT + CELL_SPACING_COEFFICIENT * j);
-                sprite.setSize(ITEM_WIDTH, ITEM_HEIGHT);
-                result.add(sprite);
+                int index = random.nextInt(textures.size() - 1);
+                GameObject sprite = new GameObject(textures.get(index), ItemType.values()[index]);
+                sprite.setPosition(startXPosition + i * GameConstants.ITEM_WIDTH + GameConstants.CELL_SPACING_COEFFICIENT * i, startYPosition - j * GameConstants.ITEM_HEIGHT + GameConstants.CELL_SPACING_COEFFICIENT * j);
+                sprite.setSize(GameConstants.ITEM_WIDTH, GameConstants.ITEM_HEIGHT);
+                sprite.setGridPosition(new GridPosition(i, j));
+                result[i][j] = sprite;
             }
         }
 
@@ -132,23 +123,61 @@ public class Match3 extends ApplicationAdapter {
         background.draw(batch);
 
         if (selectedElements.size() == 2) {
-            Sprite firstElement = selectedElements.get(0);
-            Sprite secondElement = selectedElements.get(1);
-            Vector2 position = new Vector2(firstElement.getX(), firstElement.getY());
-            firstElement.setPosition(secondElement.getX(), secondElement.getY());
-            secondElement.setPosition(position.x, position.y);
+            GameObject firstElement = selectedElements.get(0);
+            GameObject secondElement = selectedElements.get(1);
+            if (areNeighbors(firstElement, secondElement)) {
+                Vector2 position = new Vector2(firstElement.getX(), firstElement.getY());
+                GridPosition gridPosition = firstElement.getGridPosition();
+                firstElement.setPosition(secondElement.getX(), secondElement.getY());
+                firstElement.setGridPosition(secondElement.getGridPosition());
+                secondElement.setPosition(position.x, position.y);
+                secondElement.setGridPosition(gridPosition);
+
+                gameMap[firstElement.getGridPosition().getRowPosition()][firstElement.getGridPosition().getColPosition()] = firstElement;
+                gameMap[secondElement.getGridPosition().getRowPosition()][secondElement.getGridPosition().getColPosition()] = secondElement;
+
+                checkMatchesAndFillEmptyCells();
+            }
             selectedElements.clear();
         }
 
-        drawField(field, batch);
+        drawField(gameMap, batch);
 
 		//end of draw logic
 		batch.end();
 	}
 
-    private void drawField(List<Sprite> field, SpriteBatch batch) {
-        for (Sprite sprite : field) {
-            sprite.draw(batch);
+    private void checkMatchesAndFillEmptyCells() {
+	    Set<GameObject> matchedItems;
+	    do {
+            matchedItems = MatchUtils.getMatchesOnGameMap(gameMap);
+            for (GameObject object : matchedItems) {
+                int index = random.nextInt(textures.size() - 1);
+                GameObject sprite = new GameObject(textures.get(index), ItemType.values()[index]);
+                sprite.setPosition(object.getX(), object.getY());
+                sprite.setSize(GameConstants.ITEM_WIDTH, GameConstants.ITEM_HEIGHT);
+                sprite.setGridPosition(object.getGridPosition());
+                gameMap[object.getGridPosition().getRowPosition()][object.getGridPosition().getColPosition()] = sprite;
+            }
+        } while (matchedItems.size() > 0);
+    }
+
+    private boolean areNeighbors(GameObject firstElement, GameObject secondElement) {
+        GridPosition position = firstElement.getGridPosition();
+	    GridPosition gridPosition = secondElement.getGridPosition();
+
+        return ((position.getColPosition() == gridPosition.getColPosition()) || (position.getRowPosition() == gridPosition.getRowPosition())) &&
+                (Math.abs(position.getColPosition() - gridPosition.getColPosition()) <= 1)
+                && (Math.abs(position.getRowPosition() - gridPosition.getRowPosition()) <= 1);
+    }
+
+    private void drawField(GameObject[][] map, SpriteBatch batch) {
+        for (int i = 0; i < GameConstants.VERTICAL_CELLS_COUNT ; i++) {
+            for (int j = 0; j < GameConstants.HORIZONTAL_CELLS_COUNT; j++) {
+                if (map[i][j] != null) {
+                    map[i][j].draw(batch);
+                }
+            }
         }
 	}
 
