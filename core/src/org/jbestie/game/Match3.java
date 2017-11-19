@@ -15,6 +15,8 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import org.jbestie.game.animation.Animation;
+import org.jbestie.game.animation.MoveAnimation;
 import org.jbestie.game.enums.ItemType;
 import org.jbestie.game.object.GameObject;
 import org.jbestie.game.object.GridPosition;
@@ -24,6 +26,7 @@ import org.jbestie.game.utils.MatchUtils;
 import java.util.*;
 
 public class Match3 extends ApplicationAdapter {
+    private static final float ANIMATION_DURATION = 0.2f;
     private SpriteBatch batch;
 	private Sprite background;
     private List<Texture> textures;
@@ -36,6 +39,8 @@ public class Match3 extends ApplicationAdapter {
     private BitmapFont font;
     private GlyphLayout fontLayout = new GlyphLayout();
     private int score = 0;
+
+    private List<Animation> animatedObjects = new ArrayList<Animation>();
 
 	@Override
 	public void create () {
@@ -130,6 +135,7 @@ public class Match3 extends ApplicationAdapter {
 
 		//place draw logic here
         drawBackground();
+        animate();
         processSelectedElements();
         drawField(gameMap, batch);
         drawScore();
@@ -138,6 +144,28 @@ public class Match3 extends ApplicationAdapter {
 		batch.end();
 	}
 
+    private void animate() {
+        for (Iterator<Animation> iterator = animatedObjects.iterator(); iterator.hasNext();) {
+            Animation item = iterator.next();
+            if (!item.isAnimating()) {
+                iterator.remove();
+            } else {
+                item.update(); // perform animation
+            }
+        }
+    }
+
+
+    private boolean animationInProgress() {
+	    boolean animationInProgress = false;
+
+	    for (Animation animation : animatedObjects) {
+	        animationInProgress |= animation.isAnimating();
+        }
+
+        return  animationInProgress;
+    }
+
     private void drawScore() {
 	    String text = String.format("Score: %s", score);
         fontLayout.setText(font, text);
@@ -145,21 +173,30 @@ public class Match3 extends ApplicationAdapter {
     }
 
     private void processSelectedElements() {
+	    if (!animationInProgress()) {
+            checkMatchesAndFillEmptyCells();
+        }
+
         if (selectedElements.size() == 2) {
             GameObject firstElement = selectedElements.get(0);
             GameObject secondElement = selectedElements.get(1);
             if (areNeighbors(firstElement, secondElement)) {
                 Vector2 position = new Vector2(firstElement.getX(), firstElement.getY());
                 GridPosition gridPosition = firstElement.getGridPosition();
-                firstElement.setPosition(secondElement.getX(), secondElement.getY());
+
+                Animation firstElementAnimation = new MoveAnimation(firstElement, secondElement.getX(), secondElement.getY(), ANIMATION_DURATION);
+                firstElementAnimation.start();
+                animatedObjects.add(firstElementAnimation);
                 firstElement.setGridPosition(secondElement.getGridPosition());
-                secondElement.setPosition(position.x, position.y);
+
+                MoveAnimation secondElementAnimation = new MoveAnimation(secondElement, position.x, position.y, ANIMATION_DURATION);
+                secondElementAnimation.start();
+                animatedObjects.add(secondElementAnimation);
                 secondElement.setGridPosition(gridPosition);
 
                 gameMap[firstElement.getGridPosition().getRowPosition()][firstElement.getGridPosition().getColPosition()] = firstElement;
                 gameMap[secondElement.getGridPosition().getRowPosition()][secondElement.getGridPosition().getColPosition()] = secondElement;
 
-                checkMatchesAndFillEmptyCells();
             }
             firstElement.setAlpha(1.0f);
             secondElement.setAlpha(1.0f);
