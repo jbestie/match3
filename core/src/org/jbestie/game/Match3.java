@@ -60,6 +60,7 @@ public class Match3 extends ApplicationAdapter {
         textures = Arrays.asList(blueJelly, greenJelly, greyJelly, purpleJelly, redJelly, yellowJelly);
 
         gameMap = generateField();
+        checkMatchesAndFillEmptyCells();
 
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
