@@ -8,8 +8,15 @@ public class ScaleAnimation extends Animation {
 
     public ScaleAnimation(GameObject gameObject, float duration, float scaleX, float scaleY) {
         super(gameObject, duration);
-        this.scaleX = scaleX;
-        this.scaleY = scaleY;
+        this.scaleX = scaleX - gameObject.getScaleX();
+        this.scaleY = scaleY - gameObject.getScaleY();
+    }
+
+
+    @Override
+    public void start() {
+        super.start();
+        gameObject.setOriginCenter();
     }
 
     @Override
@@ -19,8 +26,8 @@ public class ScaleAnimation extends Animation {
 
     @Override
     protected void performAction(float deltaTime) {
-        float tmpScaleX = scaleX * deltaTime/duration;
-        float tmpScaleY = scaleY * deltaTime/duration;
+        float tmpScaleX = gameObject.getScaleX() + scaleX * deltaTime/duration;
+        float tmpScaleY = gameObject.getScaleY() + scaleY * deltaTime/duration;
         gameObject.setScale(tmpScaleX, tmpScaleY);
     }
 }

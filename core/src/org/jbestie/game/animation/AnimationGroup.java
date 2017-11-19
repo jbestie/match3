@@ -14,6 +14,15 @@ public class AnimationGroup extends Animation {
         this.animationList.addAll(Arrays.asList(animations));
     }
 
+    public AnimationGroup(float duration) {
+        super(null, duration);
+    }
+
+
+    public void add(Animation animation) {
+        animationList.add(animation);
+    }
+
     @Override
     protected void finishAnimation() {
         for (Animation animation : animationList) {

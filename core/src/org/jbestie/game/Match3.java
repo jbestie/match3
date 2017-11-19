@@ -16,6 +16,8 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import org.jbestie.game.animation.Animation;
 import org.jbestie.game.animation.AnimationGroup;
 import org.jbestie.game.animation.MoveAnimation;
+import org.jbestie.game.animation.ScaleAnimation;
+import org.jbestie.game.enums.GameState;
 import org.jbestie.game.enums.ItemType;
 import org.jbestie.game.input.MatchThreeInputProcessor;
 import org.jbestie.game.object.GameObject;
@@ -38,6 +40,8 @@ public class Match3 extends ApplicationAdapter {
     private BitmapFont font;
     private GlyphLayout fontLayout = new GlyphLayout();
     private int score = 0;
+
+    private GameState gameState = GameState.IDLE;
 
     private List<Animation> animatedObjects = new ArrayList<Animation>();
 
@@ -77,6 +81,7 @@ public class Match3 extends ApplicationAdapter {
 		batch.begin();
 
 		//place draw logic here
+        updateGameState();
         drawBackground();
         animate();
         processSelectedElements();
@@ -109,6 +114,10 @@ public class Match3 extends ApplicationAdapter {
                 item.update(); // perform animation
             }
         }
+
+        if (animatedObjects.size() == 0 && gameState.equals(GameState.MOVING_ITEMS)) {
+            gameState = GameState.IDLE;
+        }
     }
 
 
@@ -134,6 +143,26 @@ public class Match3 extends ApplicationAdapter {
     }
 
 
+    private void updateGameState() {
+	    if (!animationInProgress()) {
+//	        gameState = GameState.IDLE;
+        }
+
+        if (animationsFinished() && gameState.equals(GameState.REMOVING_MATCHES)) {
+	        checkMatchesAndFillEmptyCells();
+        }
+    }
+
+    private boolean animationsFinished() {
+        boolean animationInProgress = false;
+
+        for (Animation animation : animatedObjects) {
+            animationInProgress |= animation.isFinished();
+        }
+
+        return  animationInProgress;
+    }
+
     private boolean animationInProgress() {
         boolean animationInProgress = false;
 
@@ -152,8 +181,9 @@ public class Match3 extends ApplicationAdapter {
 
 
     private void processSelectedElements() {
-        if (!animationInProgress()) {
-            checkMatchesAndFillEmptyCells();
+        if (gameState.equals(GameState.IDLE)) {
+//            checkMatchesAndFillEmptyCells();
+            animateMatches();
         }
 
         if (selectedElements.size() == 2) {
@@ -175,12 +205,26 @@ public class Match3 extends ApplicationAdapter {
                 gameMap[firstElement.getGridPosition().getRowPosition()][firstElement.getGridPosition().getColPosition()] = firstElement;
                 gameMap[secondElement.getGridPosition().getRowPosition()][secondElement.getGridPosition().getColPosition()] = secondElement;
 
+                gameState = GameState.MOVING_ITEMS;
             }
             firstElement.setAlpha(1.0f);
             secondElement.setAlpha(1.0f);
             selectedElements.clear();
         }
     }
+
+    private void animateMatches() {
+        Set<GameObject> matchedItems = MatchUtils.getMatchesOnGameMap(gameMap);
+        if (matchedItems.size() != 0 && gameState.equals(GameState.IDLE)) {
+            gameState = GameState.REMOVING_MATCHES;
+            AnimationGroup group = new AnimationGroup(ANIMATION_DURATION);
+            for (GameObject object : matchedItems) {
+                group.add(new ScaleAnimation(object, ANIMATION_DURATION, 0.1f, 0.1f));
+            }
+
+            animatedObjects.add(group);
+        }
+	}
 
     private void drawBackground() {
         background.draw(batch);
