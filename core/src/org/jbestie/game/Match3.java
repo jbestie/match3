@@ -7,11 +7,12 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.utils.Logger;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import org.jbestie.game.enums.ItemType;
@@ -32,6 +33,9 @@ public class Match3 extends ApplicationAdapter {
     private Viewport viewport;
     private Camera camera;
     private Random random = new Random();
+    private BitmapFont font;
+    private GlyphLayout fontLayout = new GlyphLayout();
+    private int score = 0;
 
 	@Override
 	public void create () {
@@ -45,13 +49,14 @@ public class Match3 extends ApplicationAdapter {
 		batch = new SpriteBatch();
         background  = new Sprite( new Texture(Gdx.files.internal("background/bg.png")));
         background.setPosition(0.0f, 0.0f);
+        font  = new BitmapFont();
 
-        Texture blueJelly = new Texture(Gdx.files.internal("sprites/jelly_blue.png"));
-        Texture greenJelly = new Texture(Gdx.files.internal("sprites/jelly_green.png"));
-        Texture greyJelly = new Texture(Gdx.files.internal("sprites/jelly_grey.png"));
-        Texture purpleJelly = new Texture(Gdx.files.internal("sprites/jelly_purple.png"));
-        Texture redJelly = new Texture(Gdx.files.internal("sprites/jelly_red.png"));
-        Texture yellowJelly = new Texture(Gdx.files.internal("sprites/jelly_yellow.png"));
+        Texture blueJelly = new Texture(Gdx.files.local("sprites/jelly_blue.png"));
+        Texture greenJelly = new Texture(Gdx.files.local("sprites/jelly_green.png"));
+        Texture greyJelly = new Texture(Gdx.files.local("sprites/jelly_grey.png"));
+        Texture purpleJelly = new Texture(Gdx.files.local("sprites/jelly_purple.png"));
+        Texture redJelly = new Texture(Gdx.files.local("sprites/jelly_red.png"));
+        Texture yellowJelly = new Texture(Gdx.files.local("sprites/jelly_yellow.png"));
         textures = Arrays.asList(blueJelly, greenJelly, greyJelly, purpleJelly, redJelly, yellowJelly);
 
         gameMap = generateField();
@@ -78,7 +83,9 @@ public class Match3 extends ApplicationAdapter {
                                 && (y > oy && y <= (oy + object.getHeight()))) {
                             if (!selectedElements.contains(object)) {
                                 selectedElements.add(object);
+                                object.setAlpha(0.6f);
                             } else {
+                                object.setAlpha(1.0f);
                                 selectedElements.remove(object);
                             }
                             break;
@@ -119,9 +126,24 @@ public class Match3 extends ApplicationAdapter {
 		Gdx.gl.glClearColor(1, 1, 1, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		batch.begin();
-		//place draw logic here
-        background.draw(batch);
 
+		//place draw logic here
+        drawBackground();
+        processSelectedElements();
+        drawField(gameMap, batch);
+        drawScore();
+		//end of draw logic
+
+		batch.end();
+	}
+
+    private void drawScore() {
+	    String text = String.format("Score: %s", score);
+        fontLayout.setText(font, text);
+        font.draw(batch, text, 20, fontLayout.height + 20);
+    }
+
+    private void processSelectedElements() {
         if (selectedElements.size() == 2) {
             GameObject firstElement = selectedElements.get(0);
             GameObject secondElement = selectedElements.get(1);
@@ -138,19 +160,21 @@ public class Match3 extends ApplicationAdapter {
 
                 checkMatchesAndFillEmptyCells();
             }
+            firstElement.setAlpha(1.0f);
+            secondElement.setAlpha(1.0f);
             selectedElements.clear();
         }
+    }
 
-        drawField(gameMap, batch);
-
-		//end of draw logic
-		batch.end();
-	}
+    private void drawBackground() {
+        background.draw(batch);
+    }
 
     private void checkMatchesAndFillEmptyCells() {
 	    Set<GameObject> matchedItems;
 	    do {
             matchedItems = MatchUtils.getMatchesOnGameMap(gameMap);
+            score += matchedItems.size() * GameConstants.SCORE_PER_ITEM;
             for (GameObject object : matchedItems) {
                 int index = random.nextInt(textures.size() - 1);
                 GameObject sprite = new GameObject(textures.get(index), ItemType.values()[index]);
@@ -186,5 +210,9 @@ public class Match3 extends ApplicationAdapter {
 		batch.dispose();
 	}
 
+    @Override
+    public void resize(int width, int height) {
+        viewport.update(width, height, false);
+    }
 
 }
