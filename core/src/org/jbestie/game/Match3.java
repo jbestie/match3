@@ -2,7 +2,6 @@ package org.jbestie.game;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -12,12 +11,13 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import org.jbestie.game.animation.Animation;
+import org.jbestie.game.animation.AnimationGroup;
 import org.jbestie.game.animation.MoveAnimation;
 import org.jbestie.game.enums.ItemType;
+import org.jbestie.game.input.MatchThreeInputProcessor;
 import org.jbestie.game.object.GameObject;
 import org.jbestie.game.object.GridPosition;
 import org.jbestie.game.utils.GameConstants;
@@ -34,7 +34,6 @@ public class Match3 extends ApplicationAdapter {
     private List<GameObject> selectedElements = new ArrayList<GameObject>();
 
     private Viewport viewport;
-    private Camera camera;
     private Random random = new Random();
     private BitmapFont font;
     private GlyphLayout fontLayout = new GlyphLayout();
@@ -45,7 +44,7 @@ public class Match3 extends ApplicationAdapter {
 	@Override
 	public void create () {
 
-        camera = new OrthographicCamera(Gdx.graphics.getWidth(),
+        Camera camera = new OrthographicCamera(Gdx.graphics.getWidth(),
                 Gdx.graphics.getHeight());
         camera.position.set(GameConstants.WORLD_WIDTH / 2, GameConstants.WORLD_HEIGHT / 2, 0);
         camera.update();
@@ -67,63 +66,7 @@ public class Match3 extends ApplicationAdapter {
         gameMap = generateField();
         checkMatchesAndFillEmptyCells();
 
-        Gdx.input.setInputProcessor(new InputAdapter() {
-            @Override
-            public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-                if (selectedElements.size() == 2) {
-                    return  true;
-                }
-
-                Vector3 tempVec =  new Vector3();
-                camera.unproject(tempVec.set(screenX, screenY, 0));
-
-                int x = (int) tempVec.x;
-                int y = (int) tempVec.y;
-
-                for (int i = 0; i < GameConstants.VERTICAL_CELLS_COUNT ; i++) {
-                    for (int j = 0; j < GameConstants.HORIZONTAL_CELLS_COUNT; j++) {
-                        GameObject object = gameMap[i][j];
-                        int ox = Math.round(object.getX());
-                        int oy = Math.round(object.getY());
-                        if ((x > ox && x <= (ox + object.getWidth()))
-                                && (y > oy && y <= (oy + object.getHeight()))) {
-                            if (!selectedElements.contains(object)) {
-                                selectedElements.add(object);
-                                object.setAlpha(0.6f);
-                            } else {
-                                object.setAlpha(1.0f);
-                                selectedElements.remove(object);
-                            }
-                            break;
-                        }
-                    }
-
-                }
-                return true;
-            }
-        });
-    }
-
-
-	private GameObject[][] generateField() {
-        GameObject[][] result = new GameObject[GameConstants.VERTICAL_CELLS_COUNT][GameConstants.HORIZONTAL_CELLS_COUNT];
-
-	    float startXPosition = (GameConstants.WINDOW_WIDTH - GameConstants.ITEM_WIDTH * GameConstants.HORIZONTAL_CELLS_COUNT - (GameConstants.HORIZONTAL_CELLS_COUNT - 1) * GameConstants.CELL_SPACING_COEFFICIENT)/ 2;
-	    float startYPosition = GameConstants.ITEM_HEIGHT * GameConstants.VERTICAL_CELLS_COUNT + (GameConstants.VERTICAL_CELLS_COUNT - 1) * GameConstants.CELL_SPACING_COEFFICIENT ;
-
-        for (int i = 0; i < GameConstants.VERTICAL_CELLS_COUNT ; i++) {
-            for (int j = 0; j < GameConstants.HORIZONTAL_CELLS_COUNT; j++) {
-
-                int index = random.nextInt(textures.size() - 1);
-                GameObject sprite = new GameObject(textures.get(index), ItemType.values()[index]);
-                sprite.setPosition(startXPosition + i * GameConstants.ITEM_WIDTH + GameConstants.CELL_SPACING_COEFFICIENT * i, startYPosition - j * GameConstants.ITEM_HEIGHT + GameConstants.CELL_SPACING_COEFFICIENT * j);
-                sprite.setSize(GameConstants.ITEM_WIDTH, GameConstants.ITEM_HEIGHT);
-                sprite.setGridPosition(new GridPosition(i, j));
-                result[i][j] = sprite;
-            }
-        }
-
-        return result;
+        Gdx.input.setInputProcessor(new MatchThreeInputProcessor(camera, gameMap, selectedElements));
     }
 
 
@@ -144,11 +87,24 @@ public class Match3 extends ApplicationAdapter {
 		batch.end();
 	}
 
+    @Override
+	public void dispose () {
+		batch.dispose();
+	}
+
+    @Override
+    public void resize(int width, int height) {
+        viewport.update(width, height, false);
+    }
+
+
     private void animate() {
         for (Iterator<Animation> iterator = animatedObjects.iterator(); iterator.hasNext();) {
             Animation item = iterator.next();
-            if (!item.isAnimating()) {
+            if (item.isFinished()) {
                 iterator.remove();
+            } else if (!item.isAnimating() && !item.isFinished()){
+                item.start();
             } else {
                 item.update(); // perform animation
             }
@@ -156,24 +112,47 @@ public class Match3 extends ApplicationAdapter {
     }
 
 
-    private boolean animationInProgress() {
-	    boolean animationInProgress = false;
+    private GameObject[][] generateField() {
+        GameObject[][] result = new GameObject[GameConstants.VERTICAL_CELLS_COUNT][GameConstants.HORIZONTAL_CELLS_COUNT];
 
-	    for (Animation animation : animatedObjects) {
-	        animationInProgress |= animation.isAnimating();
+        float startXPosition = (GameConstants.WINDOW_WIDTH - GameConstants.ITEM_WIDTH * GameConstants.HORIZONTAL_CELLS_COUNT - (GameConstants.HORIZONTAL_CELLS_COUNT - 1) * GameConstants.CELL_SPACING_COEFFICIENT)/ 2;
+        float startYPosition = GameConstants.ITEM_HEIGHT * GameConstants.VERTICAL_CELLS_COUNT + (GameConstants.VERTICAL_CELLS_COUNT - 1) * GameConstants.CELL_SPACING_COEFFICIENT ;
+
+        for (int i = 0; i < GameConstants.VERTICAL_CELLS_COUNT ; i++) {
+            for (int j = 0; j < GameConstants.HORIZONTAL_CELLS_COUNT; j++) {
+
+                int index = random.nextInt(textures.size() - 1);
+                GameObject sprite = new GameObject(textures.get(index), ItemType.values()[index]);
+                sprite.setPosition(startXPosition + i * GameConstants.ITEM_WIDTH + GameConstants.CELL_SPACING_COEFFICIENT * i, startYPosition - j * GameConstants.ITEM_HEIGHT + GameConstants.CELL_SPACING_COEFFICIENT * j);
+                sprite.setSize(GameConstants.ITEM_WIDTH, GameConstants.ITEM_HEIGHT);
+                sprite.setGridPosition(new GridPosition(i, j));
+                result[i][j] = sprite;
+            }
+        }
+
+        return result;
+    }
+
+
+    private boolean animationInProgress() {
+        boolean animationInProgress = false;
+
+        for (Animation animation : animatedObjects) {
+            animationInProgress |= animation.isAnimating();
         }
 
         return  animationInProgress;
     }
 
     private void drawScore() {
-	    String text = String.format("Score: %s", score);
+        String text = String.format("Score: %s", score);
         fontLayout.setText(font, text);
         font.draw(batch, text, 20, fontLayout.height + 20);
     }
 
+
     private void processSelectedElements() {
-	    if (!animationInProgress()) {
+        if (!animationInProgress()) {
             checkMatchesAndFillEmptyCells();
         }
 
@@ -185,13 +164,12 @@ public class Match3 extends ApplicationAdapter {
                 GridPosition gridPosition = firstElement.getGridPosition();
 
                 Animation firstElementAnimation = new MoveAnimation(firstElement, secondElement.getX(), secondElement.getY(), ANIMATION_DURATION);
-                firstElementAnimation.start();
-                animatedObjects.add(firstElementAnimation);
-                firstElement.setGridPosition(secondElement.getGridPosition());
-
                 MoveAnimation secondElementAnimation = new MoveAnimation(secondElement, position.x, position.y, ANIMATION_DURATION);
-                secondElementAnimation.start();
-                animatedObjects.add(secondElementAnimation);
+
+                AnimationGroup animationGroup = new AnimationGroup(ANIMATION_DURATION, firstElementAnimation, secondElementAnimation);
+                animatedObjects.add(animationGroup);
+
+                firstElement.setGridPosition(secondElement.getGridPosition());
                 secondElement.setGridPosition(gridPosition);
 
                 gameMap[firstElement.getGridPosition().getRowPosition()][firstElement.getGridPosition().getColPosition()] = firstElement;
@@ -209,8 +187,8 @@ public class Match3 extends ApplicationAdapter {
     }
 
     private void checkMatchesAndFillEmptyCells() {
-	    Set<GameObject> matchedItems;
-	    do {
+        Set<GameObject> matchedItems;
+        do {
             matchedItems = MatchUtils.getMatchesOnGameMap(gameMap);
             score += matchedItems.size() * GameConstants.SCORE_PER_ITEM;
             for (GameObject object : matchedItems) {
@@ -226,7 +204,7 @@ public class Match3 extends ApplicationAdapter {
 
     private boolean areNeighbors(GameObject firstElement, GameObject secondElement) {
         GridPosition position = firstElement.getGridPosition();
-	    GridPosition gridPosition = secondElement.getGridPosition();
+        GridPosition gridPosition = secondElement.getGridPosition();
 
         return ((position.getColPosition() == gridPosition.getColPosition()) || (position.getRowPosition() == gridPosition.getRowPosition())) &&
                 (Math.abs(position.getColPosition() - gridPosition.getColPosition()) <= 1)
@@ -241,16 +219,5 @@ public class Match3 extends ApplicationAdapter {
                 }
             }
         }
-	}
-
-    @Override
-	public void dispose () {
-		batch.dispose();
-	}
-
-    @Override
-    public void resize(int width, int height) {
-        viewport.update(width, height, false);
     }
-
 }

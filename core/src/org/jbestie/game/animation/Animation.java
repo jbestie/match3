@@ -8,6 +8,7 @@ public abstract class Animation {
     protected GameObject gameObject;
     protected float duration;
     protected float time = 0.0f;
+    protected boolean finished = false;
 
     public Animation(GameObject gameObject, float duration) {
         this.gameObject = gameObject;
@@ -17,6 +18,7 @@ public abstract class Animation {
     public void start() {
         animating = true;
         time = 0.0f;
+        finished = false;
     }
 
     public void update() {
@@ -27,8 +29,13 @@ public abstract class Animation {
 
         if (time >= duration) {
             animating = false;
+            finished = true;
             finishAnimation();
         }
+    }
+
+    public boolean isFinished() {
+        return finished;
     }
 
     protected abstract void finishAnimation();
