@@ -84,6 +84,9 @@ public class Match3 extends ApplicationAdapter {
         updateGameState();
         drawBackground();
         animate();
+        if (gameState.equals(GameState.IDLE)) {
+            animateMatchedElementsBeforeRemoving();
+        }
         processSelectedElements();
         drawField(gameMap, batch);
         drawScore();
@@ -144,12 +147,15 @@ public class Match3 extends ApplicationAdapter {
 
 
     private void updateGameState() {
-	    if (!animationInProgress()) {
-//	        gameState = GameState.IDLE;
+	    if (animationsFinished() && gameState.equals(GameState.MOVING_ITEMS)) {
+	        gameState = GameState.IDLE;
+	        animatedObjects.clear();
         }
 
         if (animationsFinished() && gameState.equals(GameState.REMOVING_MATCHES)) {
 	        checkMatchesAndFillEmptyCells();
+	        gameState = GameState.IDLE;
+	        animatedObjects.clear();
         }
     }
 
@@ -163,16 +169,6 @@ public class Match3 extends ApplicationAdapter {
         return  animationInProgress;
     }
 
-    private boolean animationInProgress() {
-        boolean animationInProgress = false;
-
-        for (Animation animation : animatedObjects) {
-            animationInProgress |= animation.isAnimating();
-        }
-
-        return  animationInProgress;
-    }
-
     private void drawScore() {
         String text = String.format("Score: %s", score);
         fontLayout.setText(font, text);
@@ -181,10 +177,6 @@ public class Match3 extends ApplicationAdapter {
 
 
     private void processSelectedElements() {
-        if (gameState.equals(GameState.IDLE)) {
-//            checkMatchesAndFillEmptyCells();
-            animateMatches();
-        }
 
         if (selectedElements.size() == 2) {
             GameObject firstElement = selectedElements.get(0);
@@ -213,7 +205,7 @@ public class Match3 extends ApplicationAdapter {
         }
     }
 
-    private void animateMatches() {
+    private void animateMatchedElementsBeforeRemoving() {
         Set<GameObject> matchedItems = MatchUtils.getMatchesOnGameMap(gameMap);
         if (matchedItems.size() != 0 && gameState.equals(GameState.IDLE)) {
             gameState = GameState.REMOVING_MATCHES;
