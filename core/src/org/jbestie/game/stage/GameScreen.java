@@ -46,12 +46,8 @@ public class GameScreen implements Screen {
 
     private List<Animation> animatedObjects = new ArrayList<Animation>();
 
-    final Match3 game;
 
-
-    public GameScreen(Match3 game) {
-        this.game = game;
-
+    GameScreen(Match3 game) {
         Camera camera = new OrthographicCamera(Gdx.graphics.getWidth(),
                 Gdx.graphics.getHeight());
         camera.position.set(GameConstants.WORLD_WIDTH / 2, GameConstants.WORLD_HEIGHT / 2, 0);
