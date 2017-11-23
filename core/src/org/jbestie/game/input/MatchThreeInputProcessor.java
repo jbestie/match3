@@ -1,9 +1,13 @@
 package org.jbestie.game.input;
 
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.math.Vector3;
+import org.jbestie.game.Match3;
+import org.jbestie.game.enums.GameState;
 import org.jbestie.game.object.GameObject;
+import org.jbestie.game.stage.GameScreen;
 import org.jbestie.game.utils.GameConstants;
 
 import java.util.List;
@@ -12,10 +16,12 @@ public class MatchThreeInputProcessor extends InputAdapter {
     private Camera camera;
     private GameObject[][] gameMap;
     private List<GameObject> selectedElements;
+    private GameScreen screen;
 
-    public MatchThreeInputProcessor(Camera camera, GameObject[][] gameMap, List<GameObject> selectedElements) {
-        this.camera = camera;
-        this.gameMap = gameMap;
+    public MatchThreeInputProcessor(GameScreen screen, List<GameObject> selectedElements) {
+        this.screen = screen;
+        this.camera = screen.getCamera();
+        this.gameMap = screen.getGameMap();
         this.selectedElements = selectedElements;
     }
 
@@ -50,6 +56,24 @@ public class MatchThreeInputProcessor extends InputAdapter {
             }
 
         }
+        return true;
+    }
+
+
+    @Override
+    public boolean keyDown(int keycode) {
+        switch (keycode) {
+            case Input.Keys.ESCAPE:
+                if (screen.getState().equals(GameState.IDLE)) {
+                    screen.setState(GameState.PAUSED);
+                } else {
+                    screen.setState(GameState.IDLE);
+                }
+                break;
+            default:
+                break;
+        }
+
         return true;
     }
 }

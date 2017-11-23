@@ -43,18 +43,20 @@ public class GameScreen implements Screen {
     private int score = 0;
 
     private GameState gameState = GameState.IDLE;
-
+    private Match3 game;
     private List<Animation> animatedObjects = new ArrayList<Animation>();
+    private Camera camera;
 
 
     GameScreen(Match3 game) {
-        Camera camera = new OrthographicCamera(Gdx.graphics.getWidth(),
+        camera = new OrthographicCamera(Gdx.graphics.getWidth(),
                 Gdx.graphics.getHeight());
         camera.position.set(GameConstants.WORLD_WIDTH / 2, GameConstants.WORLD_HEIGHT / 2, 0);
         camera.update();
         viewport = new FitViewport(GameConstants.WORLD_WIDTH, GameConstants.WORLD_HEIGHT, camera);
 
         batch = game.batch;
+        this.game = game;
         background  = new Sprite( new Texture(Gdx.files.internal("background/bg.png")));
         background.setPosition(0.0f, 0.0f);
         font  = new BitmapFont();
@@ -70,7 +72,7 @@ public class GameScreen implements Screen {
         gameMap = generateField();
         checkMatchesAndFillEmptyCells();
 
-        Gdx.input.setInputProcessor(new MatchThreeInputProcessor(camera, gameMap, selectedElements));
+        Gdx.input.setInputProcessor(new MatchThreeInputProcessor(this, selectedElements));
     }
 
 
@@ -86,18 +88,53 @@ public class GameScreen implements Screen {
         batch.begin();
 
         //place draw logic here
-        updateGameState();
-        drawBackground();
-        animate();
-        if (gameState.equals(GameState.IDLE)) {
-            animateMatchedElementsBeforeRemoving();
+        switch (gameState) {
+            case IDLE:
+                drawBackground();
+                animateMatchedElementsBeforeRemoving();
+                processSelectedElements();
+                drawField(gameMap, batch);
+                drawScore();
+                break;
+            case PAUSED:
+                drawMenu();
+                break;
+            case MOVING_ITEMS:
+                if (animationsFinished()) {
+                    gameState = GameState.IDLE;
+                    animatedObjects.clear();
+                }
+                drawBackground();
+                animate();
+                drawField(gameMap, batch);
+                drawScore();
+                break;
+            case REMOVING_MATCHES:
+                if (animationsFinished()) {
+                    checkMatchesAndFillEmptyCells();
+                    gameState = GameState.IDLE;
+                    animatedObjects.clear();
+                }
+                drawBackground();
+                animate();
+                drawField(gameMap, batch);
+                drawScore();
+                break;
+            case GAME_OVER:
+                break;
+            case LEVEL_END:
+                break;
+            default:
+                throw new IllegalStateException("State " + gameState + " is unknown!");
         }
-        processSelectedElements();
-        drawField(gameMap, batch);
-        drawScore();
+
         //end of draw logic
 
         batch.end();
+    }
+
+    private void drawMenu() {
+
     }
 
     @Override
@@ -137,10 +174,6 @@ public class GameScreen implements Screen {
                 item.update(); // perform animation
             }
         }
-
-        if (animatedObjects.size() == 0 && gameState.equals(GameState.MOVING_ITEMS)) {
-            gameState = GameState.IDLE;
-        }
     }
 
 
@@ -163,20 +196,6 @@ public class GameScreen implements Screen {
         }
 
         return result;
-    }
-
-
-    private void updateGameState() {
-        if (animationsFinished() && gameState.equals(GameState.MOVING_ITEMS)) {
-            gameState = GameState.IDLE;
-            animatedObjects.clear();
-        }
-
-        if (animationsFinished() && gameState.equals(GameState.REMOVING_MATCHES)) {
-            checkMatchesAndFillEmptyCells();
-            gameState = GameState.IDLE;
-            animatedObjects.clear();
-        }
     }
 
     private boolean animationsFinished() {
@@ -275,5 +294,21 @@ public class GameScreen implements Screen {
                 }
             }
         }
+    }
+
+    public Camera getCamera() {
+        return camera;
+    }
+
+    public GameObject[][] getGameMap() {
+        return gameMap;
+    }
+
+    public void setState(GameState state) {
+        this.gameState = state;
+    }
+
+    public GameState getState() {
+        return gameState;
     }
 }
