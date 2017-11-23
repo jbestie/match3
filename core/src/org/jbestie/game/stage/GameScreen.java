@@ -7,13 +7,11 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.*;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.scenes.scene2d.Event;
-import com.badlogic.gdx.scenes.scene2d.EventListener;
-import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Button;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import org.jbestie.game.Match3;
@@ -33,6 +31,8 @@ import java.util.*;
 
 public class GameScreen implements Screen {
     private static final float ANIMATION_DURATION = 0.2f;
+    private final Texture RESTART_BUTTON = new Texture(Gdx.files.local("sprites/restart_button.png"));
+    private final Texture CHOOSE_LEVEL = new Texture(Gdx.files.local("sprites/choose_level.png"));
     private SpriteBatch batch;
     private Sprite background;
     private Sprite menuBackground;
@@ -50,22 +50,15 @@ public class GameScreen implements Screen {
     private final Match3 game;
     private List<Animation> animatedObjects = new ArrayList<Animation>();
     private Camera camera;
-    private Stage stage;
+    private GameObject restartButton;
+    private GameObject chooseLevelButton;
 
-    GameScreen(final Match3 game) {
+    public GameScreen(final Match3 game) {
         camera = new OrthographicCamera(Gdx.graphics.getWidth(),
                 Gdx.graphics.getHeight());
         camera.position.set(GameConstants.WORLD_WIDTH / 2, GameConstants.WORLD_HEIGHT / 2, 0);
         camera.update();
         viewport = new FitViewport(GameConstants.WORLD_WIDTH, GameConstants.WORLD_HEIGHT, camera);
-        stage = new Stage(viewport, game.batch);
-
-        stage.addListener(new EventListener() {
-            @Override
-            public boolean handle(Event event) {
-                return false;
-            }
-        });
 
         batch = game.batch;
         this.game = game;
@@ -87,64 +80,38 @@ public class GameScreen implements Screen {
         checkMatchesAndFillEmptyCells();
 
         InputMultiplexer inputMultiplexer = new InputMultiplexer();
-        inputMultiplexer.addProcessor(stage);
+//        inputMultiplexer.addProcessor(stage);
         inputMultiplexer.addProcessor(new MatchThreeInputProcessor(this, selectedElements));
 
 //        Gdx.input.setInputProcessor(new MatchThreeInputProcessor(this, selectedElements));
 
-        final Button restart = createRestartButton(game);
-        final Button levelSelect = createLevelRestartButton(game);
-        stage.addActor(restart);
-        stage.addActor(levelSelect);
+//        final Button restart = createRestartButton(game);
+//        final Button levelSelect = createLevelRestartButton(game);
+//        stage.addActor(restart);
+//        stage.addActor(levelSelect);
+        chooseLevelButton = createChooseLevelButton();
+        restartButton = createRestartButton();
         Gdx.input.setInputProcessor(inputMultiplexer);
     }
 
-    private Button createLevelRestartButton(final Match3 game) {
-        final Button levelSelect = new Button(new TextureRegionDrawable(new TextureRegion(new Texture(Gdx.files.local("sprites/choose_level.png")))));
+    private GameObject createChooseLevelButton() {
+        float buttonWidth = GameConstants.WINDOW_WIDTH / 4;
+        float buttonHeight = GameConstants.WINDOW_WIDTH / 4;
+        GameObject restartButton = new GameObject(CHOOSE_LEVEL, ItemType.NONE);
+        restartButton.setPosition(GameConstants.WINDOW_WIDTH / 4 - 0.5f * buttonWidth, GameConstants.WINDOW_HEIGHT - 2f * buttonWidth);
+        restartButton.setSize(buttonWidth, buttonHeight);
 
-        float buttonWidth = GameConstants.WINDOW_WIDTH / 8;
-        float buttonHeight = GameConstants.WINDOW_WIDTH / 8;
-        levelSelect.setPosition(GameConstants.WINDOW_WIDTH / 2 - buttonWidth, GameConstants.WINDOW_HEIGHT / 2 - buttonWidth );
-        levelSelect.setSize(buttonWidth, buttonHeight);
-        levelSelect.addListener(new EventListener() {
-            @Override
-            public boolean handle(Event event) {
-                if (gameState != GameState.PAUSED) {
-                    return false;
-                }
-
-                if (levelSelect.isPressed()) {
-                    game.setScreen(new LevelSelectScreen(game));
-                    return true;
-                }
-                return false;
-            }
-        });
-        return levelSelect;
+        return  restartButton;
     }
 
-    private Button createRestartButton(final Match3 game) {
-        final Button restart = new Button(new TextureRegionDrawable(new TextureRegion(new Texture(Gdx.files.local("sprites/restart_button.png")))));
+    private GameObject createRestartButton() {
+        float buttonWidth = GameConstants.WINDOW_WIDTH / 4;
+        float buttonHeight = GameConstants.WINDOW_WIDTH / 4;
+        GameObject restartButton = new GameObject(RESTART_BUTTON, ItemType.NONE);
+        restartButton.setPosition(GameConstants.WINDOW_WIDTH / 4 + 1.5f * buttonWidth, GameConstants.WINDOW_HEIGHT - 2f * buttonWidth);
+        restartButton.setSize(buttonWidth, buttonHeight);
 
-        float buttonWidth = GameConstants.WINDOW_WIDTH / 8;
-        float buttonHeight = GameConstants.WINDOW_WIDTH / 8;
-        restart.setPosition(GameConstants.WINDOW_WIDTH / 2 + buttonWidth / 2, GameConstants.WINDOW_HEIGHT / 2 - buttonWidth );
-        restart.setSize(buttonWidth, buttonHeight);
-        restart.addListener(new EventListener() {
-            @Override
-            public boolean handle(Event event) {
-                if (gameState != GameState.PAUSED) {
-                    return false;
-                }
-
-                if (restart.isPressed()) {
-                    game.setScreen(new GameScreen(game));
-                    return true;
-                }
-                return false;
-            }
-        });
-        return restart;
+        return  restartButton;
     }
 
 
@@ -170,8 +137,7 @@ public class GameScreen implements Screen {
                 batch.end();
                 break;
             case PAUSED:
-                drawMenuBackground();
-                stage.draw();
+                drawPauseMenu();
                 break;
             case MOVING_ITEMS:
                 batch.begin();
@@ -209,10 +175,13 @@ public class GameScreen implements Screen {
 
     }
 
-    private void drawMenuBackground() {
-        stage.getBatch().begin();
-        stage.getBatch().draw(menuBackground, 0.0f, 0.0f, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
-        stage.getBatch().end();
+    private void drawPauseMenu() {
+
+        batch.begin();
+        batch.draw(menuBackground, 0.0f, 0.0f, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
+        restartButton.draw(batch);
+        chooseLevelButton.draw(batch);
+        batch.end();
     }
 
 
@@ -259,8 +228,8 @@ public class GameScreen implements Screen {
     private GameObject[][] generateField() {
         GameObject[][] result = new GameObject[GameConstants.VERTICAL_CELLS_COUNT][GameConstants.HORIZONTAL_CELLS_COUNT];
 
-        float startXPosition = (GameConstants.WINDOW_WIDTH - GameConstants.ITEM_WIDTH * GameConstants.HORIZONTAL_CELLS_COUNT - (GameConstants.HORIZONTAL_CELLS_COUNT - 1) * GameConstants.CELL_SPACING_COEFFICIENT)/ 2;
-        float startYPosition = GameConstants.ITEM_HEIGHT * GameConstants.VERTICAL_CELLS_COUNT + (GameConstants.VERTICAL_CELLS_COUNT - 1) * GameConstants.CELL_SPACING_COEFFICIENT ;
+        float startXPosition = (GameConstants.WINDOW_WIDTH - GameConstants.ITEM_WIDTH - GameConstants.ITEM_WIDTH * GameConstants.HORIZONTAL_CELLS_COUNT - (GameConstants.HORIZONTAL_CELLS_COUNT - 1) * GameConstants.CELL_SPACING_COEFFICIENT)/ 2;
+        float startYPosition = GameConstants.WINDOW_HEIGHT - 1.5f * GameConstants.ITEM_HEIGHT + (GameConstants.VERTICAL_CELLS_COUNT - 1) * GameConstants.CELL_SPACING_COEFFICIENT ;
 
         for (int i = 0; i < GameConstants.VERTICAL_CELLS_COUNT ; i++) {
             for (int j = 0; j < GameConstants.HORIZONTAL_CELLS_COUNT; j++) {
@@ -389,5 +358,17 @@ public class GameScreen implements Screen {
 
     public GameState getState() {
         return gameState;
+    }
+
+    public GameObject getRestartButton() {
+        return restartButton;
+    }
+
+    public GameObject getChooseLevelButton() {
+        return chooseLevelButton;
+    }
+
+    public Match3 getGame() {
+        return game;
     }
 }

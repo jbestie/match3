@@ -18,8 +18,8 @@ public final class MatchUtils {
 
         Set<GameObject> result = new TreeSet<GameObject>();
 
-        for (int row = 0; row < GameConstants.HORIZONTAL_CELLS_COUNT; row++) {
-            for (int col = 0; col < GameConstants.VERTICAL_CELLS_COUNT; col++) {
+        for (int row = 0; row < GameConstants.VERTICAL_CELLS_COUNT; row++) {
+            for (int col = 0; col < GameConstants.HORIZONTAL_CELLS_COUNT; col++) {
                 List<GameObject> horizontalMatches = getHorizontalMatches(gameMap, row, col);
                 if (horizontalMatches.size() >= GameConstants.MIN_COUNT_TO_MATCH) {
                     result.addAll(horizontalMatches);

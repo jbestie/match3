@@ -21,7 +21,7 @@ public class LevelSelectScreen implements Screen {
     private final Stage stage;
     private Texture background;
 
-    LevelSelectScreen(final Match3 game) {
+    public LevelSelectScreen(final Match3 game) {
         background = new Texture(Gdx.files.local("sprites/level_select.png"));
 
         OrthographicCamera camera = new OrthographicCamera(Gdx.graphics.getWidth(),

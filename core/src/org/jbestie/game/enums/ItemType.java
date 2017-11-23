@@ -6,5 +6,5 @@ public enum  ItemType {
     GREY,
     PURPLE,
     RED,
-    YELLOW
+    NONE, YELLOW
 }

@@ -15,10 +15,12 @@ public class MenuScreen implements Screen {
     private final Match3 game;
     private Texture background;
     private OrthographicCamera camera;
+    private Texture playButton;
 
     public MenuScreen(Match3 game) {
         this.game = game;
         background  = new Texture(Gdx.files.internal("background/logo_bg.png"));
+        playButton  = new Texture(Gdx.files.internal("sprites/play_button.png"));
         camera = new OrthographicCamera();
         camera.setToOrtho(false, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
         viewport = new FitViewport(GameConstants.WORLD_WIDTH, GameConstants.WORLD_HEIGHT, camera);
@@ -40,8 +42,8 @@ public class MenuScreen implements Screen {
 
         game.batch.begin();
         game.batch.draw(background, 0.0f, 0.0f, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
-        game.font.draw(game.batch, "Welcome to Drop!!! ", 100, 150);
-        game.font.draw(game.batch, "Tap anywhere to begin!", 100, 100);
+        game.batch.draw(playButton, GameConstants.WINDOW_WIDTH / 2 , GameConstants.WINDOW_HEIGHT / 6, GameConstants.WINDOW_WIDTH / 4, GameConstants.WINDOW_WIDTH / 4);
+
         game.batch.end();
 
         if (Gdx.input.isTouched()) {
