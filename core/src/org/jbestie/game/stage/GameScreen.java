@@ -95,20 +95,20 @@ public class GameScreen implements Screen {
     }
 
     private GameObject createChooseLevelButton() {
-        float buttonWidth = GameConstants.WINDOW_WIDTH / 4;
-        float buttonHeight = GameConstants.WINDOW_WIDTH / 4;
+        float buttonWidth = GameConstants.WINDOW_WIDTH / 6;
+        float buttonHeight = GameConstants.WINDOW_WIDTH / 6;
         GameObject restartButton = new GameObject(CHOOSE_LEVEL, ItemType.NONE);
-        restartButton.setPosition(GameConstants.WINDOW_WIDTH / 4 - 0.5f * buttonWidth, GameConstants.WINDOW_HEIGHT - 2f * buttonWidth);
+        restartButton.setPosition(GameConstants.WINDOW_WIDTH / 4 - 0.25f * buttonWidth, GameConstants.WINDOW_HEIGHT - 2f * buttonWidth);
         restartButton.setSize(buttonWidth, buttonHeight);
 
         return  restartButton;
     }
 
     private GameObject createRestartButton() {
-        float buttonWidth = GameConstants.WINDOW_WIDTH / 4;
-        float buttonHeight = GameConstants.WINDOW_WIDTH / 4;
+        float buttonWidth = GameConstants.WINDOW_WIDTH / 6;
+        float buttonHeight = GameConstants.WINDOW_WIDTH / 6;
         GameObject restartButton = new GameObject(RESTART_BUTTON, ItemType.NONE);
-        restartButton.setPosition(GameConstants.WINDOW_WIDTH / 4 + 1.5f * buttonWidth, GameConstants.WINDOW_HEIGHT - 2f * buttonWidth);
+        restartButton.setPosition(GameConstants.WINDOW_WIDTH / 4 + 1.75f * buttonWidth, GameConstants.WINDOW_HEIGHT - 2f * buttonWidth);
         restartButton.setSize(buttonWidth, buttonHeight);
 
         return  restartButton;
@@ -228,8 +228,8 @@ public class GameScreen implements Screen {
     private GameObject[][] generateField() {
         GameObject[][] result = new GameObject[GameConstants.VERTICAL_CELLS_COUNT][GameConstants.HORIZONTAL_CELLS_COUNT];
 
-        float startXPosition = (GameConstants.WINDOW_WIDTH - GameConstants.ITEM_WIDTH - GameConstants.ITEM_WIDTH * GameConstants.HORIZONTAL_CELLS_COUNT - (GameConstants.HORIZONTAL_CELLS_COUNT - 1) * GameConstants.CELL_SPACING_COEFFICIENT)/ 2;
-        float startYPosition = GameConstants.WINDOW_HEIGHT - 1.5f * GameConstants.ITEM_HEIGHT + (GameConstants.VERTICAL_CELLS_COUNT - 1) * GameConstants.CELL_SPACING_COEFFICIENT ;
+        float startXPosition = (GameConstants.WINDOW_WIDTH - 3f * GameConstants.ITEM_WIDTH - GameConstants.ITEM_WIDTH * GameConstants.HORIZONTAL_CELLS_COUNT - (GameConstants.HORIZONTAL_CELLS_COUNT - 1) * GameConstants.CELL_SPACING_COEFFICIENT)/ 2;
+        float startYPosition = GameConstants.WINDOW_HEIGHT - 1.3f * GameConstants.ITEM_HEIGHT + (GameConstants.VERTICAL_CELLS_COUNT - 1) * GameConstants.CELL_SPACING_COEFFICIENT ;
 
         for (int i = 0; i < GameConstants.VERTICAL_CELLS_COUNT ; i++) {
             for (int j = 0; j < GameConstants.HORIZONTAL_CELLS_COUNT; j++) {

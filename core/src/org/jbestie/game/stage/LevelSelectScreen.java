@@ -5,6 +5,7 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Event;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
@@ -20,9 +21,12 @@ public class LevelSelectScreen implements Screen {
     private static final int LEVELS_COUNT = 7;
     private final Stage stage;
     private Texture background;
+    private Sprite menuBackground;
 
     public LevelSelectScreen(final Match3 game) {
         background = new Texture(Gdx.files.local("sprites/level_select.png"));
+        menuBackground  = new Sprite( new Texture(Gdx.files.internal("background/blocking_panel_bg.png")));
+        menuBackground.setPosition(0.0f, 0.0f);
 
         OrthographicCamera camera = new OrthographicCamera(Gdx.graphics.getWidth(),
                 Gdx.graphics.getHeight());
@@ -40,7 +44,7 @@ public class LevelSelectScreen implements Screen {
             float buttonHeight = 1.5f * buttonWidth;
             int xValue = i % 4;
             int yValue = i / 4;
-            btn.setPosition(xValue * buttonWidth + xValue * buttonWidth + buttonWidth / 2, GameConstants.WINDOW_HEIGHT / 2 - yValue * buttonHeight - yValue * buttonHeight /4);
+            btn.setPosition(xValue * buttonWidth + xValue * buttonWidth + buttonWidth / 2, GameConstants.WINDOW_HEIGHT / 2 - buttonHeight / 5 - yValue * buttonHeight );
             btn.setSize(buttonWidth, buttonHeight);
             btn.addListener(new EventListener() {
                 @Override
@@ -71,6 +75,7 @@ public class LevelSelectScreen implements Screen {
         //level_select.png
         stage.act(Gdx.graphics.getDeltaTime()); //Perform ui logic
         stage.getBatch().begin();
+        stage.getBatch().draw(menuBackground, 0.0f, 0.0f, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
         stage.getBatch().draw(background, 0, 0, GameConstants.WORLD_WIDTH, GameConstants.WORLD_HEIGHT);
         stage.getBatch().end();
         stage.draw(); //Draw the ui

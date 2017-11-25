@@ -42,7 +42,7 @@ public class MenuScreen implements Screen {
 
         game.batch.begin();
         game.batch.draw(background, 0.0f, 0.0f, GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT);
-        game.batch.draw(playButton, GameConstants.WINDOW_WIDTH / 2 , GameConstants.WINDOW_HEIGHT / 6, GameConstants.WINDOW_WIDTH / 4, GameConstants.WINDOW_WIDTH / 4);
+        game.batch.draw(playButton, GameConstants.WINDOW_WIDTH / 2 , GameConstants.WINDOW_HEIGHT / 6, GameConstants.WINDOW_WIDTH / 6, GameConstants.WINDOW_WIDTH / 6);
 
         game.batch.end();
 
